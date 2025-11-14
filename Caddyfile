@@ -1,5 +1,7 @@
-# Lắng nghe trên cổng động được Render gán
-{env.PORT}
+:8080
+
+# Tắt TLS/SSL tự động vì Render đã xử lý
+tls internal
 
 # Cấu hình Web Root và PHP-FPM
 root * /srv
