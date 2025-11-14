@@ -1,13 +1,27 @@
 <?php
-// Tắt báo lỗi để J2ME client dễ xử lý hơn
-error_reporting(0); 
+error_reporting(0);
+header("Content-Type: text/plain; charset=UTF-8");
 
-// Lấy địa chỉ IP của client
-$client_ip = $_SERVER['REMOTE_ADDR'];
+function get_ip() {
+    $keys = [
+        "HTTP_CF_CONNECTING_IP",
+        "HTTP_X_FORWARDED_FOR",
+        "HTTP_X_REAL_IP",
+        "HTTP_CLIENT_IP",
+        "REMOTE_ADDR"
+    ];
 
-// Đặt Header Content-Type là text/plain (văn bản thuần túy)
-header('Content-Type: text/plain');
+    foreach ($keys as $k) {
+        if (!empty($_SERVER[$k])) {
+            $ip = $_SERVER[$k];
+            if (strpos($ip, ",") !== false)
+                $ip = trim(explode(",", $ip)[0]);
 
-// Trả về IP
-echo $client_ip;
-?>
+            if (filter_var($ip, FILTER_VALIDATE_IP))
+                return $ip;
+        }
+    }
+    return "0.0.0.0";
+}
+
+echo get_ip();
