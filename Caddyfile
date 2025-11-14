@@ -1,17 +1,7 @@
-Caddy config for Render deployment
+# Lắng nghe trên cổng động được Render gán
+{env.PORT}
 
-We listen on all incoming ports and tell Caddy where PHP-FPM is running.
-
-:80
-
-Serve all files from the /srv directory (where we copied files in Dockerfile)
-
+# Cấu hình Web Root và PHP-FPM
 root * /srv
-
-Enable PHP support
-
-php_fastcgi /php-fpm:9000
-
-Handle static files and internal routing
-
+php_fastcgi unix//var/run/php-fpm.sock
 file_server
