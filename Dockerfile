@@ -1,11 +1,9 @@
-# Sử dụng image PHP chính thức (version 8.2) kết hợp với Apache
-FROM php:8.2-apache
+# Use the official image that includes Caddy and PHP-FPM
+FROM caddy:2-php
 
-# Sao chép tất cả các file PHP vào thư mục gốc của web server Apache.
-COPY . /var/www/html/
+# Copy all project files into the Caddy web root
+COPY . /srv
 
-# Apache sẽ tự động lắng nghe cổng 80 (cổng HTTP mặc định).
-EXPOSE 80
-
-# Apache sẽ tự động khởi động và phục vụ các file PHP.
-# Không cần lệnh CMD phức tạp.
+# The Caddyfile handles the request routing and PHP processing.
+# The server is started by default by the base image.
+# Render will handle the port configuration automatically.
