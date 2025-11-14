@@ -6,12 +6,12 @@ RUN apk update && \
     apk add --no-cache curl caddy && \
     docker-php-ext-install session
 
-# FINAL CADDYFILE CONFIGURATION: Creates the Caddyfile with reverse_proxy for correct Host Headers.
-# FIX: Removed the 'root' subdirective from inside 'reverse_proxy' to solve Caddy parse error.
+# **SỬA LỖI 502:** Chuyển Caddy kết nối đến cổng TCP 9000
+# Thường PHP-FPM trên Alpine chạy ở 9000.
 RUN echo "http://:8080" > /etc/caddy/Caddyfile && \
     echo "tls internal" >> /etc/caddy/Caddyfile && \
     echo "root * /srv" >> /etc/caddy/Caddyfile && \
-    echo "reverse_proxy /* unix//var/run/php-fpm.sock {" >> /etc/caddy/Caddyfile && \
+    echo "reverse_proxy /* 127.0.0.1:9000 {" >> /etc/caddy/Caddyfile && \
     echo "    header_up Host {host}" >> /etc/caddy/Caddyfile && \
     echo "    header_up X-Forwarded-For {remote}" >> /etc/caddy/Caddyfile && \
     echo "}" >> /etc/caddy/Caddyfile && \
@@ -20,8 +20,10 @@ RUN echo "http://:8080" > /etc/caddy/Caddyfile && \
 # Copy all project files into the Caddy web root
 COPY . /srv
 
-# Expose port 8080 for Render to detect
+# Expose port 8080 cho Caddy và 9000 cho FPM
 EXPOSE 8080
+EXPOSE 9000
 
-# Start PHP-FPM in the background and run Caddy in the foreground
+# Start PHP-FPM ở 9000 và chạy Caddy
+# FPM mặc định lắng nghe ở cổng 9000
 CMD php-fpm -D && caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
