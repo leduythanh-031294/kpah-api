@@ -1,55 +1,39 @@
 <?php
 error_reporting(0);
-header('Content-Type: text/plain');
+header("Content-Type: text/plain; charset=UTF-8");
 
-// --- THÔNG TIN DATABASE ---
-$db_host = "sql104.infinityfree.com";
-$db_user = "if0_40256457";
-$db_pass = "Thanh03121994";
-$db_name = "if0_40256457_leduythanh";
-// --------------------------
+// Lấy IP gửi từ MIDlet
+$ip = isset($_GET['ip']) ? trim($_GET['ip']) : "";
 
-$ip = isset($_GET['ip']) ? trim($_GET['ip']) : '';
-if ($ip == '') {
-    echo "0"; // Không có IP -> từ chối
-    exit;
-}
-
-// 1. Kết nối Database
-$conn = @new mysqli($db_host, $db_user, $db_pass, $db_name);
-if ($conn->connect_error) {
-    echo "0"; 
-    exit;
-}
-
-// 2. Đọc IP đang khóa
-$result = $conn->query("SELECT locked_ip FROM ip_lock WHERE id = 1 LIMIT 1");
-$locked_ip = '';
-if ($result && $result->num_rows > 0) {
-    $row = $result->fetch_assoc();
-    $locked_ip = trim($row['locked_ip']);
-}
-
-// 3. Xử lý logic kiểm tra
-if ($locked_ip == '') {
-    // Chưa có IP nào -> khóa IP hiện tại
-    $stmt = $conn->prepare("UPDATE ip_lock SET locked_ip = ? WHERE id = 1");
-    $stmt->bind_param("s", $ip);
-    if ($stmt->execute()) {
-        echo "1"; // Thành công
-    } else {
-        echo "0"; // Lỗi ghi DB
-    }
-    $stmt->close();
-
-} elseif ($locked_ip == $ip) {
-    // Cùng IP đang hoạt động -> cho phép
-    echo "1";
-
-} else {
-    // IP khác đang bị khóa -> từ chối
+if (!filter_var($ip, FILTER_VALIDATE_IP)) {
     echo "0";
+    exit;
 }
 
-$conn->close();
-?>
+// kết nối SQLite
+$db = new SQLite3(__DIR__ . "/ip_lock.db");
+$db->exec("CREATE TABLE IF NOT EXISTS ip_lock (id INTEGER PRIMARY KEY, locked_ip TEXT)");
+
+// lấy IP hiện tại
+$res = $db->query("SELECT locked_ip FROM ip_lock WHERE id = 1");
+$row = $res->fetchArray(SQLITE3_ASSOC);
+
+$current = $row["locked_ip"] ?? "";
+
+// nếu trống → ghi IP này
+if ($current === "" || $current === null) {
+    $stmt = $db->prepare("INSERT OR REPLACE INTO ip_lock (id, locked_ip) VALUES (1, ?)");
+    $stmt->bindValue(1, $ip, SQLITE3_TEXT);
+    $stmt->execute();
+    echo "1";
+    exit;
+}
+
+// nếu đúng IP → cho phép
+if ($current === $ip) {
+    echo "1";
+    exit;
+}
+
+// sai IP → từ chối
+echo "0";
