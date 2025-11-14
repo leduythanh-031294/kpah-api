@@ -1,0 +1,17 @@
+Caddy config for Render deployment
+
+We listen on all incoming ports and tell Caddy where PHP-FPM is running.
+
+:80
+
+Serve all files from the /srv directory (where we copied files in Dockerfile)
+
+root * /srv
+
+Enable PHP support
+
+php_fastcgi /php-fpm:9000
+
+Handle static files and internal routing
+
+file_server
