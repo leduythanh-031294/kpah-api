@@ -6,15 +6,14 @@ RUN apk update && \
     apk add --no-cache curl caddy && \
     docker-php-ext-install session
 
-# **FINAL CADDYFILE CONFIGURATION:** Creates the Caddyfile with reverse_proxy for correct Host Headers
-# This resolves the "host not allowed" and "certificate" errors.
+# FINAL CADDYFILE CONFIGURATION: Creates the Caddyfile with reverse_proxy for correct Host Headers.
+# FIX: Removed the 'root' subdirective from inside 'reverse_proxy' to solve Caddy parse error.
 RUN echo "http://:8080" > /etc/caddy/Caddyfile && \
     echo "tls internal" >> /etc/caddy/Caddyfile && \
     echo "root * /srv" >> /etc/caddy/Caddyfile && \
     echo "reverse_proxy /* unix//var/run/php-fpm.sock {" >> /etc/caddy/Caddyfile && \
     echo "    header_up Host {host}" >> /etc/caddy/Caddyfile && \
     echo "    header_up X-Forwarded-For {remote}" >> /etc/caddy/Caddyfile && \
-    echo "    root /srv" >> /etc/caddy/Caddyfile && \
     echo "}" >> /etc/caddy/Caddyfile && \
     echo "file_server" >> /etc/caddy/Caddyfile
 
