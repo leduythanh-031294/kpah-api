@@ -1,9 +1,0 @@
-http://:8080
-
-# Tắt TLS/SSL tự động vì Render đã xử lý HTTPS ở tầng trên
-tls internal
-
-# Cấu hình Web Root và PHP-FPM
-root * /srv
-php_fastcgi unix//var/run/php-fpm.sock
-file_server
