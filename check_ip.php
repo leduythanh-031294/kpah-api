@@ -1,39 +1,29 @@
 <?php
+// check_ip.php
 error_reporting(0);
-header("Content-Type: text/plain; charset=UTF-8");
+header('Content-Type: text/plain; charset=UTF-8');
 
-// Lấy IP gửi từ MIDlet
-$ip = isset($_GET['ip']) ? trim($_GET['ip']) : "";
+$ip = isset($_GET['ip']) ? trim($_GET['ip']) : '';
+if (!filter_var($ip, FILTER_VALIDATE_IP)) { echo "0"; exit; }
 
-if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-    echo "0";
-    exit;
-}
+// dùng SQLite (file ip_lock.db trong cùng thư mục)
+$db = new SQLite3(__DIR__ . '/ip_lock.db');
+$db->exec('CREATE TABLE IF NOT EXISTS ip_lock (id INTEGER PRIMARY KEY, locked_ip TEXT)');
 
-// kết nối SQLite
-$db = new SQLite3(__DIR__ . "/ip_lock.db");
-$db->exec("CREATE TABLE IF NOT EXISTS ip_lock (id INTEGER PRIMARY KEY, locked_ip TEXT)");
-
-// lấy IP hiện tại
-$res = $db->query("SELECT locked_ip FROM ip_lock WHERE id = 1");
-$row = $res->fetchArray(SQLITE3_ASSOC);
-
-$current = $row["locked_ip"] ?? "";
-
-// nếu trống → ghi IP này
-if ($current === "" || $current === null) {
-    $stmt = $db->prepare("INSERT OR REPLACE INTO ip_lock (id, locked_ip) VALUES (1, ?)");
+// Try lock if empty
+$stmt = $db->prepare("UPDATE ip_lock SET locked_ip = ? WHERE id = 1 AND (locked_ip IS NULL OR locked_ip = '')");
+if ($stmt) {
     $stmt->bindValue(1, $ip, SQLITE3_TEXT);
     $stmt->execute();
-    echo "1";
-    exit;
+    if ($db->changes() > 0) { echo "1"; $db->close(); exit; }
 }
 
-// nếu đúng IP → cho phép
-if ($current === $ip) {
-    echo "1";
-    exit;
-}
+// Otherwise read current
+$res = $db->query('SELECT locked_ip FROM ip_lock WHERE id = 1 LIMIT 1');
+$row = $res ? $res->fetchArray(SQLITE3_ASSOC) : null;
+$current = $row['locked_ip'] ?? '';
 
-// sai IP → từ chối
-echo "0";
+// Nếu current khớp ip -> ok, ngược lại từ chối
+if ($current === $ip) echo "1"; else echo "0";
+
+$db->close();
