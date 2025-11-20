@@ -1,5 +1,4 @@
 <?php
-// get_ip.php
 error_reporting(0);
 header('Content-Type: text/plain; charset=UTF-8');
 
@@ -10,12 +9,11 @@ function client_ip() {
     ];
     foreach ($keys as $k) {
         if (!empty($_SERVER[$k])) {
-            $ip = $_SERVER[$k];
-            if (strpos($ip, ',') !== false) $ip = trim(explode(',', $ip)[0]);
-            if (filter_var($ip, FILTER_VALIDATE_IP)) return $ip;
+            $ip = explode(',', $_SERVER[$k])[0];
+            return trim($ip);
         }
     }
-    return '0.0.0.0';
+    return "0.0.0.0";
 }
 
 echo client_ip();
