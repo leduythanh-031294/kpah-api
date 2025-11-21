@@ -1,22 +1,26 @@
 <?php
 error_reporting(0);
-header("Content-Type: text/plain; charset=UTF-8");
 
-$ip = $_GET["ip"] ?? "";
-if (!filter_var($ip, FILTER_VALIDATE_IP)) {
-    echo "0";
-    exit;
-}
+$ip = $_GET['ip'] ?? '';
 
-$db = new SQLite3(__DIR__ . "/ip_lock.db");
+if (!filter_var($ip, FILTER_VALIDATE_IP)) exit("0");
 
-// Update thời gian ping
+$db = new SQLite3(__DIR__ . '/ip_lock.db');
+
+// Tạo bảng lưu thời gian ping
+$db->exec("CREATE TABLE IF NOT EXISTS ping_time (
+    ip TEXT PRIMARY KEY,
+    last_ping INTEGER
+)");
+
+// Ghi thời gian ping mới
 $stmt = $db->prepare("
-    INSERT INTO ping_time (ip, last_ping)
-    VALUES (?, strftime('%s','now'))
-    ON CONFLICT(ip) DO UPDATE SET last_ping = strftime('%s','now')
+    INSERT INTO ping_time (ip, last_ping) 
+    VALUES (?, ?) 
+    ON CONFLICT(ip) DO UPDATE SET last_ping = excluded.last_ping
 ");
 $stmt->bindValue(1, $ip, SQLITE3_TEXT);
+$stmt->bindValue(2, time(), SQLITE3_INTEGER);
 $stmt->execute();
 
 echo "1";
